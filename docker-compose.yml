@@ -1,0 +1,35 @@
+version: "3.7"
+
+services:
+
+  whatssend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    networks:
+      - IMSNet   # mesma rede interna que você já usa no YOURLS
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        # Regra de roteamento pelo subdomínio desejado
+        - traefik.http.routers.whatssend.rule=Host(`whatssend.imsdigitais.com`)
+        - traefik.http.routers.whatssend.entrypoints=websecure
+        - traefik.http.routers.whatssend.tls.certresolver=letsencryptresolver
+
+        # Nome do serviço no Traefik
+        - traefik.http.routers.whatssend.service=whatssend
+        # Porta interna do container (Nginx expõe 80)
+        - traefik.http.services.whatssend.loadbalancer.server.port=80
+
+networks:
+  IMSNet:
+    external: true
+    name: IMSNet
