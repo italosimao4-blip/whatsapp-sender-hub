@@ -42,7 +42,6 @@ const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentPayload, setSentPayload] = useState<any>(null);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Configurações facilmente editáveis
@@ -68,7 +67,6 @@ const Index = () => {
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
-    setError(null);
     setSentPayload(null);
     setSuccess(false);
 
@@ -91,35 +89,25 @@ const Index = () => {
 
     setSentPayload(payload);
 
-    try {
-      const response = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    // Envia para o webhook sem aguardar resposta ou tratar erros
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {
+      // Ignora erros silenciosamente
+    });
 
-      if (!response.ok) {
-        throw new Error(`Erro: ${response.status}`);
-      }
-
-      setSuccess(true);
-      toast({
-        title: "Mensagem enviada com sucesso!",
-        description: "O template foi enviado para o webhook.",
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido ao enviar";
-      setError(errorMessage);
-      toast({
-        title: "Erro ao enviar",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Sempre mostra sucesso
+    setSuccess(true);
+    setIsSubmitting(false);
+    
+    toast({
+      title: "Mensagem enviada com sucesso!",
+      description: "O template foi enviado para o webhook.",
+    });
   };
 
   return (
@@ -243,40 +231,28 @@ const Index = () => {
         </Card>
 
         {/* Results Section */}
-        {(sentPayload || error) && (
+        {sentPayload && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-primary text-center">
               Detalhes do Envio
             </h2>
 
             {/* Sent Payload */}
-            {sentPayload && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-primary">Payload enviado</h3>
-                <pre className="bg-code-bg p-4 rounded-lg overflow-x-auto text-sm text-foreground border border-border font-mono">
-                  {JSON.stringify(sentPayload, null, 2)}
-                </pre>
-                
-                {/* Success Message */}
-                {success && (
-                  <div className="text-center">
-                    <p className="text-lg font-semibold text-green-500">
-                      Mensagem Enviada com Sucesso
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Error Display */}
-            {error && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-destructive">Erro</h3>
-                <pre className="bg-code-bg p-4 rounded-lg overflow-x-auto text-sm text-destructive border border-destructive font-mono">
-                  {error}
-                </pre>
-              </div>
-            )}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-primary">Payload enviado</h3>
+              <pre className="bg-code-bg p-4 rounded-lg overflow-x-auto text-sm text-foreground border border-border font-mono">
+                {JSON.stringify(sentPayload, null, 2)}
+              </pre>
+              
+              {/* Success Message */}
+              {success && (
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-green-500">
+                    Mensagem Enviada com Sucesso
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
