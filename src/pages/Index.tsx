@@ -37,15 +37,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface WebhookResponse {
-  message?: string;
-  [key: string]: any;
-}
 
 const Index = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentPayload, setSentPayload] = useState<any>(null);
-  const [webhookResponse, setWebhookResponse] = useState<WebhookResponse | null>(null);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -74,7 +70,7 @@ const Index = () => {
     setIsSubmitting(true);
     setError(null);
     setSentPayload(null);
-    setWebhookResponse(null);
+    setSuccess(false);
 
     const payload = {
       messaging_product: "whatsapp",
@@ -104,13 +100,11 @@ const Index = () => {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || `Erro: ${response.status}`);
+        throw new Error(`Erro: ${response.status}`);
       }
 
-      setWebhookResponse(data);
+      setSuccess(true);
       toast({
         title: "Mensagem enviada com sucesso!",
         description: "O template foi enviado para o webhook.",
@@ -249,7 +243,7 @@ const Index = () => {
         </Card>
 
         {/* Results Section */}
-        {(sentPayload || webhookResponse || error) && (
+        {(sentPayload || error) && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-primary text-center">
               Detalhes do Envio
@@ -257,21 +251,20 @@ const Index = () => {
 
             {/* Sent Payload */}
             {sentPayload && (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-primary">Payload enviado</h3>
                 <pre className="bg-code-bg p-4 rounded-lg overflow-x-auto text-sm text-foreground border border-border font-mono">
                   {JSON.stringify(sentPayload, null, 2)}
                 </pre>
-              </div>
-            )}
-
-            {/* Webhook Response */}
-            {webhookResponse && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-primary">Webhook / API response</h3>
-                <pre className="bg-code-bg p-4 rounded-lg overflow-x-auto text-sm text-foreground border border-border font-mono">
-                  {JSON.stringify(webhookResponse, null, 2)}
-                </pre>
+                
+                {/* Success Message */}
+                {success && (
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-green-500">
+                      Mensagem Enviada com Sucesso
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
